@@ -1,0 +1,79 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+using namespace std;
+
+struct Point {
+    int x, y;
+};
+
+int orientation(Point p, Point q, Point r) {
+    int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+    if (val == 0) return 0;
+    return (val > 0) ? 1 : 2;
+}
+
+vector<Point> convexHull(vector<Point>& points) {
+    int n = points.size();
+    if (n < 3) return {};
+
+    int minY = points[0].y, minX = points[0].x, minIdx = 0;
+    for (int i = 1; i < n; ++i) {
+        if (points[i].y < minY || (points[i].y == minY && points[i].x < minX)) {
+            minY = points[i].y;
+            minX = points[i].x;
+            minIdx = i;
+        }
+    }
+
+    swap(points[0], points[minIdx]);
+    Point start = points[0];
+
+    sort(points.begin() + 1, points.end(), [start](Point a, Point b) {
+        int o = orientation(start, a, b);
+        if (o == 0)
+            return (start.x - a.x) * (start.x - a.x) + (start.y - a.y) * (start.y - a.y) <
+                   (start.x - b.x) * (start.x - b.x) + (start.y - b.y) * (start.y - b.y);
+        return o == 2;
+    });
+
+    vector<Point> hull;
+    hull.push_back(points[0]);
+    for (int i = 1; i < n; ++i) {
+        while (hull.size() >= 2 && orientation(hull[hull.size() - 2], hull.back(), points[i]) != 2)
+            hull.pop_back();
+        hull.push_back(points[i]);
+    }
+
+    return hull;
+}
+
+double polygonArea(const vector<Point>& points) {
+    int n = points.size();
+    int area = 0;
+    for (int i = 0; i < n; ++i) {
+        int j = (i + 1) % n;
+        area += points[i].x * points[j].y;
+        area -= points[j].x * points[i].y;
+    }
+    area = abs(area) / 2;
+    return area;
+}
+
+int main() {
+    int n;
+    cin >> n;
+    vector<Point> points(n);
+    for (int i = 0; i < n; ++i) {
+        cin >> points[i].x >> points[i].y;
+    }
+
+    vector<Point> hull = convexHull(points);
+    double area = polygonArea(hull);
+    int cows = static_cast<int>(area / 50);
+    cout << cows << endl;
+
+    return 0;
+}
