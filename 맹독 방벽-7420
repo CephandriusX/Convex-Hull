@@ -1,0 +1,77 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+using namespace std;
+
+struct Point {
+    int x, y;
+};
+
+double distance(Point a, Point b){
+    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+}
+
+int orientation(Point p, Point q, Point r) {
+    long long val = static_cast<long long>(q.y - p.y) * (r.x - q.x) - static_cast<long long>(q.x - p.x) * (r.y - q.y);
+    if (val == 0) return 0;
+    return (val > 0) ? 1 : 2;
+}
+
+vector<Point> convexHull(vector<Point>& points) {
+    int n = points.size();
+    
+    int minY = points[0].y, minX = points[0].x, minIdx = 0;
+    for (int i = 1; i < n; ++i) {
+        if (points[i].y < minY || (points[i].y == minY && points[i].x < minX)) {
+            minY = points[i].y;
+            minX = points[i].x;
+            minIdx = i;
+        }
+    }
+    
+    swap(points[0], points[minIdx]);
+    Point start = points[0];
+    
+    sort(points.begin() + 1, points.end(), [start](Point a, Point b){
+        int o = orientation(start, a, b);
+        if (o == 0)
+            return distance(start, a) < distance(start, b);
+        return o == 2;
+    });
+    
+    vector<Point> hull;
+    hull.push_back(points[0]);
+    for (int i = 1; i < n; ++i) {
+        while (hull.size() >= 2 && orientation(hull[hull.size() - 2], hull.back(), points[i]) != 2)
+            hull.pop_back();
+        hull.push_back(points[i]);
+    }
+    
+    return hull;
+}
+
+int main() {
+    int n, L;
+    cin >> n >> L;
+    vector<Point> points(n);
+    
+    for (int i = 0; i < n; ++i) {
+        cin >> points[i].x >> points[i].y;
+    }
+    
+    vector<Point> hull = convexHull(points);
+    
+    double perimeter = 0;
+    int hullsize = hull.size();
+    for (int i = 0; i < hullsize; ++i) {
+        perimeter += distance(hull[i], hull[(i + 1) % hullsize]);
+    }
+    
+    perimeter += 2 * M_PI * L;
+    
+    cout << round(perimeter) << endl;
+    
+    return 0;
+}
