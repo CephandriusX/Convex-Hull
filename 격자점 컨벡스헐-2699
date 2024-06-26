@@ -1,0 +1,89 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+struct Point {
+    int x, y;
+};
+
+int orientation(Point p, Point q, Point r) {
+    int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+    if (val == 0) return 0;
+    return (val > 0) ? 1 : 2;
+}
+
+vector<Point> convexHull(vector<Point>& points) {
+    int n = points.size();
+    if (n < 3) return {};
+
+    int maxY = points[0].y, minX = points[0].x, minIdx = 0;
+    for (int i = 1; i < n; ++i) {
+        if (points[i].y > maxY || (points[i].y == maxY && points[i].x < minX)) {
+            maxY = points[i].y;
+            minX = points[i].x;
+            minIdx = i;
+        }
+    }
+
+    swap(points[0], points[minIdx]);
+    Point start = points[0];
+
+    sort(points.begin() + 1, points.end(), [start](Point a, Point b) {
+        int o = orientation(start, a, b);
+        if (o == 0)
+            return (start.x - a.x) * (start.x - a.x) + (start.y - a.y) * (start.y - a.y) <
+                   (start.x - b.x) * (start.x - b.x) + (start.y - b.y) * (start.y - b.y);
+        return o == 2;
+    });
+
+    vector<Point> hull;
+    hull.push_back(points[0]);
+    for (int i = 1; i < n; ++i) {
+        while (hull.size() >= 2 && orientation(hull[hull.size() - 2], hull.back(), points[i]) != 2)
+            hull.pop_back();
+        hull.push_back(points[i]);
+    }
+
+    return hull;
+}
+
+bool clockwise(Point a, Point b, Point start) {
+    int o = orientation(start, a, b);
+    if (o == 0)
+        return (start.x - a.x) * (start.x - a.x) + (start.y - a.y) * (start.y - a.y) <
+               (start.x - b.x) * (start.x - b.x) + (start.y - b.y) * (start.y - b.y);
+    return o == 1;
+}
+
+int main() {
+    int t;
+    cin >> t;
+    while (t--) {
+        int n;
+        cin >> n;
+        vector<Point> points(n);
+        for (int i = 0; i < n; ++i) {
+            cin >> points[i].x >> points[i].y;
+        }
+
+        vector<Point> hull = convexHull(points);
+        int hullSize = hull.size();
+        cout << hullSize << endl;
+        
+        Point start = *max_element(hull.begin(), hull.end(), [](Point a, Point b) {
+            return a.y < b.y || (a.y == b.y && a.x > b.x);
+        });
+
+        sort(hull.begin(), hull.end(), [start](Point a, Point b) {
+            return clockwise(a, b, start);
+        });
+
+        for (const auto& p : hull) {
+            cout << p.x << " " << p.y << endl;
+        }
+    }
+
+    return 0;
+}
